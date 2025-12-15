@@ -13,6 +13,15 @@ import { UserModel } from '../models/user'
 import * as utils from '../lib/utils'
 import logger from '../lib/logger'
 
+// Allow-list of trusted hostnames for profile images
+const TRUSTED_IMAGE_HOSTS = [
+  'i.imgur.com',
+  'images.unsplash.com',
+  'cdn.pixabay.com',
+  'upload.wikimedia.org'
+  // Add more trusted image proxy hosts as needed
+]
+
 export function profileImageUrlUpload () {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (req.body.imageUrl !== undefined) {
@@ -21,7 +30,22 @@ export function profileImageUrlUpload () {
       const loggedInUser = security.authenticatedUsers.get(req.cookies.token)
       if (loggedInUser) {
         try {
-          const response = await fetch(url)
+          let validImageUrl
+          try {
+            const parsed = new URL(url)
+            // Only allow https image URLs from approved hosts
+            if (
+              (parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+              TRUSTED_IMAGE_HOSTS.includes(parsed.hostname)
+            ) {
+              validImageUrl = parsed.toString()
+            } else {
+              throw new Error('Untrusted or invalid image host')
+            }
+          } catch (err) {
+            throw new Error('Invalid or ntrusted image URL')
+          }
+          const response = await fetch(validImageUrl)
           if (!response.ok || !response.body) {
             throw new Error('url returned a non-OK status code or an empty body')
           }
