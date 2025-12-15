@@ -43,7 +43,7 @@ export function profileImageUrlUpload () {
               throw new Error('Untrusted or invalid image host')
             }
           } catch (err) {
-            throw new Error('Invalid or ntrusted image URL')
+            throw new Error('Invalid or untrusted image URL')
           }
           const response = await fetch(validImageUrl)
           if (!response.ok || !response.body) {
